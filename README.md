@@ -1,14 +1,14 @@
 # Blue Raven
 
-An open protocol for DIY and indie IoT hardware. No lock-in. No cloud dependency. No vendor permission required.
+Bluetooth standardized how devices talk. Blue Raven standardizes who they answer to.
 
 ---
 
 ## What this is
 
-Blue Raven is a lightweight, open protocol that defines how low-power hardware devices — sensors, controllers, embedded systems — authenticate, format payloads, and POST data to an HTTP endpoint.
+Blue Raven is an open protocol and certification standard for IoT hardware. If a device is Blue Raven certified, the data it generates belongs to the person who owns the device — not a platform, not a corporation, not a cloud they didn't choose.
 
-That's it. The protocol is intentionally minimal. A device that implements Blue Raven sends a signed JSON payload over HTTPS to a URL you control. What you do with that data is your business.
+In practice: a Blue Raven device sends a signed JSON payload over HTTPS to a URL you control. No intermediary. No account required. No platform that raises prices once you've built on it. The protocol is intentionally minimal — any HTTP server that can parse JSON and verify an HMAC-SHA256 signature can receive Blue Raven payloads.
 
 This repo contains the protocol specification, reference firmware for ESP32, integration guides for common backend stacks, and example applications.
 
