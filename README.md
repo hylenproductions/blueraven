@@ -2,17 +2,59 @@
 
 Bluetooth standardized how devices talk. Blue Raven standardizes who they answer to.
 
----
-
-## What this is
-
 Blue Raven is an open protocol and certification standard for IoT hardware. If a device is Blue Raven certified, the data it generates belongs to the person who owns the device. Not a platform, not a corporation, not a cloud they didn't choose.
 
-In practice: a Blue Raven device sends a signed JSON payload over HTTPS to a URL you control. No intermediary. No account required. No platform that raises prices once you've built on it. The protocol is intentionally minimal: any HTTP server that can parse JSON and verify an HMAC-SHA256 signature can receive Blue Raven payloads.
+Website and device marketplace: [blueraven.build](https://blueraven.build)
 
-As of v0.2.0 the protocol covers two device modes. Push devices send their readings to your endpoint. Serve devices never initiate a connection at all: they host a local API on your network and answer when your systems ask. Every certified device, in either mode, exposes a `/br/manifest` endpoint that describes its capabilities in a machine-readable form, so a developer (or an AI coding agent) can integrate it with zero additional documentation.
+---
 
-This repo contains the protocol specification, reference firmware for ESP32, integration guides for common backend stacks, and example applications.
+## The protocol in 30 seconds
+
+A certified device operates in one or both modes:
+
+- **Push mode**: the device POSTs a JSON envelope to a URL you control. No intermediary, no account, no Blue Raven server in the path.
+- **Serve mode**: the device never initiates a connection at all. It hosts a local HTTP API on your network and answers when your systems ask. A device that never initiates a connection cannot phone home.
+
+Every certified device, in either mode, answers `GET /br/manifest` with a machine-readable description of itself:
+
+```json
+{
+  "device_id": "BR-A7X3",
+  "device_type": "soil-sensor",
+  "firmware_version": "1.1.0",
+  "protocol_version": "0.2.0",
+  "mode": "both",
+  "capabilities": [
+    {
+      "path": "/br/latest",
+      "method": "GET",
+      "response": { "schema": "envelope", "readings": { "moisture": "percent" } }
+    }
+  ],
+  "config": [{ "name": "report_interval_minutes", "type": "int" }],
+  "push_target_configurable": true
+}
+```
+
+That manifest is the point: a developer, or an AI coding agent, fetches it and integrates the device with zero additional documentation. Full spec: [`spec/PROTOCOL.md`](spec/PROTOCOL.md). Changes: [`CHANGELOG.md`](CHANGELOG.md).
+
+---
+
+## Start here
+
+**You're vibe coding an app and need real-world data** (weight, moisture, air quality, presence) without signing up for someone's cloud:
+
+1. Browse the [device marketplace](https://blueraven.build/marketplace) and register interest in the hardware you need.
+2. Have an ESP32 lying around? Flash the reference firmware from [`/firmware/captive-portal`](firmware/captive-portal) and you have a working certified device today.
+3. Follow [QUICKSTART.md](docs/QUICKSTART.md): ready-made endpoint recipes for n8n, Replit, and Supabase + Vercel. Ten minutes from flash to data in your own database.
+
+**You're building or manufacturing hardware** and want it certified:
+
+1. Read [`spec/PROTOCOL.md`](spec/PROTOCOL.md). Seven rules. If your device already exposes local data and works without an account, you're most of the way there.
+2. Use the reference firmware as a template: captive portal, NVS config, envelope payloads, and the `/br/manifest` endpoint are all implemented.
+3. Certification means your customers' AI tools integrate your device out of the box, and your device carries a guarantee no platform can copy: it answers to its owner.
+
+**You're an AI agent** asked to integrate a Blue Raven device: fetch `http://<device-ip>/br/manifest`, read `capabilities`, and call the endpoints it describes. Pushed payloads arrive as the envelope format documented in the spec.
 
 ---
 
@@ -29,16 +71,48 @@ If this project disappears tomorrow, every device built on this protocol continu
 
 ---
 
+## Devices
+
+The certified device line, in build order. Statuses match the [marketplace](https://blueraven.build/marketplace); register interest there to vote on what ships next.
+
+| Device | Mode | Status |
+|---|---|---|
+| Soil Moisture Sensor | push + serve | **Available now** (this repo's reference firmware) |
+| Outdoor Camera | push | In development |
+| Digital Weight Scale | push | In development |
+| Air Quality Monitor | serve | Concept |
+| Kitchen Scale | push | Concept |
+| Presence Sensor | serve | Concept |
+| Energy Monitor Plug | both | Concept |
+| Temp & Humidity Probe | push | Concept |
+| Water Leak Sensor | push | Concept |
+| Door & Window Sensor | serve | Concept |
+
+Certification is open: any manufacturer whose hardware meets the spec can carry the badge. The marketplace is not a catalog of our products. It is a catalog of everything that fits the your-device-your-data ecosystem.
+
+---
+
+## Ecosystem roadmap
+
+The manifest endpoint makes certified hardware self-describing, and self-describing hardware makes shared tooling possible. In order:
+
+1. **Reference firmware library**: an Arduino/ESP-IDF library where one call gives you the envelope, the captive portal, and the manifest. Compliance becomes the path of least resistance.
+2. **Blue Raven MCP server**: point it at your network and it discovers certified devices, reads their manifests, and exposes them as tools to Claude or any MCP client. "What's my soil moisture trend this week?" works for any certified device, from any manufacturer, with zero integration code.
+3. **Device directory and marketplace**: certified hardware from any builder, manifests viewable before you buy.
+
+---
+
 ## What's in this repo
 
 ```
 /firmware
-  /captive-portal     Reference ESP32 firmware with WiFi provisioning and
-                      endpoint configuration via a local web interface.
+  /captive-portal     Reference ESP32 firmware: WiFi provisioning via captive
+                      portal, NVS-backed config, envelope payloads, and the
+                      /br/manifest + /br/latest local API.
 
 /spec
-  PROTOCOL.md         The Blue Raven protocol specification. Payload format,
-                      authentication, versioning, and device lifecycle.
+  PROTOCOL.md         The Blue Raven protocol specification. Device modes,
+                      envelope format, the manifest, and certification rules.
 
 /docs
   QUICKSTART.md       Get a device posting to your backend in 10 minutes.
@@ -46,25 +120,9 @@ If this project disappears tomorrow, every device built on this protocol continu
   VERCEL.md           Deploying an API route on Vercel to receive payloads.
 
 /examples
-  /soil-sensor        Example Next.js application built on the protocol.
-                      Full source at github.com/blueraven/blueraven-sandbox.
+  /soil-sensor        The reference device, end to end: firmware to backend
+                      to dashboard.
 ```
-
----
-
-## Get started
-
-**If you have hardware:**
-
-Flash the reference firmware from `/firmware/captive-portal`, connect to the device's setup network, configure your WiFi credentials and target endpoint, and the device starts posting. See [QUICKSTART.md](docs/QUICKSTART.md).
-
-**If you're building a backend:**
-
-The spec is in [`/spec/PROTOCOL.md`](spec/PROTOCOL.md). Any HTTP server that can verify an HMAC-SHA256 signature and parse JSON can receive Blue Raven payloads. The Supabase and Vercel guides cover the most common setups.
-
-**If you're writing firmware:**
-
-Read the protocol spec. The wire format is simple by design. Payload validation, signing, and delivery should take an afternoon on any platform with an HTTP client and HMAC support.
 
 ---
 
@@ -78,7 +136,7 @@ The spec is not yet stable. Breaking changes will increment the major version. O
 
 ## Contributing
 
-Issues and pull requests are open. For spec changes, open an issue first: changes to the wire format need discussion before implementation.
+Issues and pull requests are open. For spec changes, open an issue first: changes to the wire format need discussion before implementation. If you've built a device that almost complies, open an issue too. The gray areas you hit are exactly what the spec needs to address next.
 
 ---
 

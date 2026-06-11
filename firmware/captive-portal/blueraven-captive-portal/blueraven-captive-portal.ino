@@ -19,7 +19,7 @@
  * configuration and restarts into AP mode.
  *
  * SPDX-License-Identifier: Apache-2.0
- * https://github.com/blueraven/blueraven
+ * https://github.com/hylenproductions/blueraven
  */
 
 #include <WiFi.h>
