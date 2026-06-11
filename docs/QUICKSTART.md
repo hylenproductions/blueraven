@@ -25,7 +25,7 @@ Every Blue Raven device posts this JSON to whatever URL you configure. That's th
 
 ## 2. Set up your device
 
-Scan the QR code on your device packaging. Connect your phone to the `BlueRaven-[TAG]` WiFi network — the setup page opens automatically. Enter your WiFi credentials and your backend endpoint URL. Hit save. The device reboots and starts posting immediately.
+Scan the QR code on your device packaging. Connect your phone to the `BlueRaven-[TAG]` WiFi network and the setup page opens automatically. Enter your WiFi credentials and your backend endpoint URL. Hit save. The device reboots and starts posting immediately.
 
 Come back here once you have an endpoint URL.
 
@@ -33,20 +33,20 @@ Come back here once you have an endpoint URL.
 
 ## 3. Choose your backend
 
-### Option A: No code — n8n (5 minutes)
+### Option A: No code with n8n (5 minutes)
 
 1. Go to [n8n.io](https://n8n.io) and create an account.
 2. Create a new workflow. Add a **Webhook** node, set the method to **POST**.
-3. Copy the webhook URL — this is your Blue Raven endpoint.
+3. Copy the webhook URL. This is your Blue Raven endpoint.
 4. Go back to device setup and paste the URL.
 5. Add a second node: Google Sheets, Airtable, Notion, or any database.
 6. Activate the workflow.
 
-> **Free tier note:** n8n cloud limits operations. A device posting every 30 seconds sends 2,880 requests/day. For high-frequency devices, use n8n self-hosted on Railway or Render — it's free and has no operation limits. See [Option A in Section 5](#other-supported-destinations).
+> **Free tier note:** n8n cloud limits operations. A device posting every 30 seconds sends 2,880 requests/day. For high-frequency devices, use n8n self-hosted on Railway or Render. It is free and has no operation limits. See [Option A in Section 5](#other-supported-destinations).
 
 ---
 
-### Option B: Vibe coding — Replit (10 minutes)
+### Option B: Vibe coding with Replit (10 minutes)
 
 Open **Replit Agent** and paste this prompt exactly:
 
@@ -54,13 +54,13 @@ Open **Replit Agent** and paste this prompt exactly:
 Create a POST endpoint at /api/blueraven that accepts JSON payloads from Blue Raven IoT devices. The payload shape is: { "device_id": string, "timestamp": number, "readings": object }. Store all payloads in a database table named sensor_readings. Return {"success": true} on success. Show a simple table of recent readings on the home page.
 ```
 
-Replit will generate the endpoint, database, and a basic dashboard. Copy the Replit app URL and add `/api/blueraven` — that's your endpoint. Paste it into your Blue Raven device setup.
+Replit will generate the endpoint, database, and a basic dashboard. Copy the Replit app URL and add `/api/blueraven`. That is your endpoint. Paste it into your Blue Raven device setup.
 
 ---
 
-### Option C: Developer backend — Supabase + Vercel (10 minutes)
+### Option C: Developer backend with Supabase + Vercel (10 minutes)
 
-**Step 1** — Create the table in the Supabase SQL editor:
+**Step 1**: Create the table in the Supabase SQL editor:
 
 ```sql
 create table sensor_readings (
@@ -72,7 +72,7 @@ create table sensor_readings (
 );
 ```
 
-**Step 2** — Create `app/api/blueraven/route.ts` in your Next.js project:
+**Step 2**: Create `app/api/blueraven/route.ts` in your Next.js project:
 
 ```typescript
 import { createClient } from '@supabase/supabase-js'
@@ -97,13 +97,13 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-**Step 3** — Deploy to Vercel. Your endpoint is `https://your-app.vercel.app/api/blueraven`. Paste it into your Blue Raven device setup.
+**Step 3**: Deploy to Vercel. Your endpoint is `https://your-app.vercel.app/api/blueraven`. Paste it into your Blue Raven device setup.
 
 ---
 
 ## 4. Verify it's working
 
-Check your database or dashboard — you should see a new row every 30 seconds. If nothing is showing up, check that your endpoint URL is correct and that your device's red power LED is on.
+Check your database or dashboard. You should see a new row every 30 seconds. If nothing is showing up, check that your endpoint URL is correct and that your device's red power LED is on.
 
 ---
 
@@ -132,18 +132,18 @@ Any platform that can receive an HTTP POST works. Here are copy-paste starting p
 
 ## 6. Rate limits and free tier reality
 
-Blue Raven devices post every 30 seconds by default — 2,880 requests/day, ~86,400/month. Here's what that means for free tiers:
+Blue Raven devices post every 30 seconds by default: 2,880 requests/day, ~86,400/month. Here's what that means for free tiers:
 
 | Platform | Free Tier Fit |
 |----------|---------------|
-| Supabase | Good — 500k edge function calls/month |
+| Supabase | Good: 500k edge function calls/month |
 | n8n self-hosted | Unlimited |
 | Replit | Watch for sleep on free tier |
-| Railway | Good — generous free tier |
+| Railway | Good: generous free tier |
 | Render | Good |
-| Cloudflare Workers | Excellent — 100k requests/day free |
-| Make | Bad — burns free tier in hours |
-| Zapier | Bad — task limits apply |
+| Cloudflare Workers | Excellent: 100k requests/day free |
+| Make | Bad: burns free tier in hours |
+| Zapier | Bad: task limits apply |
 | Pipedream | Usually fine |
 
 To reduce request frequency, change the `POST_INTERVAL_MS` value in the firmware before flashing. See `firmware/captive-portal/README.md`.
