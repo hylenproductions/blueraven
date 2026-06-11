@@ -8,7 +8,9 @@ Bluetooth standardized how devices talk. Blue Raven standardizes who they answer
 
 Blue Raven is an open protocol and certification standard for IoT hardware. If a device is Blue Raven certified, the data it generates belongs to the person who owns the device — not a platform, not a corporation, not a cloud they didn't choose.
 
-In practice: a Blue Raven device sends a signed JSON payload over HTTPS to a URL you control. No intermediary. No account required. No platform that raises prices once you've built on it. The protocol is intentionally minimal — any HTTP server that can parse JSON and verify an HMAC-SHA256 signature can receive Blue Raven payloads.
+In practice: a Blue Raven device sends a signed JSON payload over HTTPS to a URL you control. No intermediary. No account required. No platform that raises prices once you've built on it. The protocol is intentionally minimal: any HTTP server that can parse JSON and verify an HMAC-SHA256 signature can receive Blue Raven payloads.
+
+As of v0.2.0 the protocol covers two device modes. Push devices send their readings to your endpoint. Serve devices never initiate a connection at all: they host a local API on your network and answer when your systems ask. Every certified device, in either mode, exposes a `/br/manifest` endpoint that describes its capabilities in a machine-readable form, so a developer (or an AI coding agent) can integrate it with zero additional documentation.
 
 This repo contains the protocol specification, reference firmware for ESP32, integration guides for common backend stacks, and example applications.
 
@@ -68,7 +70,7 @@ Read the protocol spec. The wire format is simple by design. Payload validation,
 
 ## Protocol version
 
-Current: `v0.1` (draft)
+Current: `v0.2.0` (draft). See [CHANGELOG.md](CHANGELOG.md).
 
 The spec is not yet stable. Breaking changes will increment the major version. Once `v1.0` is tagged, the wire format is frozen and new features are additive only.
 
@@ -76,7 +78,7 @@ The spec is not yet stable. Breaking changes will increment the major version. O
 
 ## Contributing
 
-Issues and pull requests are open. For spec changes, open an issue first — changes to the wire format need discussion before implementation.
+Issues and pull requests are open. For spec changes, open an issue first: changes to the wire format need discussion before implementation.
 
 ---
 
