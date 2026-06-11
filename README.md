@@ -6,7 +6,7 @@ Bluetooth standardized how devices talk. Blue Raven standardizes who they answer
 
 ## What this is
 
-Blue Raven is an open protocol and certification standard for IoT hardware. If a device is Blue Raven certified, the data it generates belongs to the person who owns the device — not a platform, not a corporation, not a cloud they didn't choose.
+Blue Raven is an open protocol and certification standard for IoT hardware. If a device is Blue Raven certified, the data it generates belongs to the person who owns the device. Not a platform, not a corporation, not a cloud they didn't choose.
 
 In practice: a Blue Raven device sends a signed JSON payload over HTTPS to a URL you control. No intermediary. No account required. No platform that raises prices once you've built on it. The protocol is intentionally minimal: any HTTP server that can parse JSON and verify an HMAC-SHA256 signature can receive Blue Raven payloads.
 
