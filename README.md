@@ -116,6 +116,8 @@ The manifest endpoint makes certified hardware self-describing, and self-describ
 
 /docs
   QUICKSTART.md       Get a device posting to your backend in 10 minutes.
+  FAQ.md              How Blue Raven differs from Matter, Home Assistant,
+                      and "works with" ecosystems. What certification costs.
   SUPABASE.md         Setting up a Supabase project to receive and store payloads.
   VERCEL.md           Deploying an API route on Vercel to receive payloads.
 
