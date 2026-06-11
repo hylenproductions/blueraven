@@ -12,10 +12,10 @@ Shaped by community feedback from builders running pull-based devices in the fie
 - **Device manifest (Rule 6).** Every certified device must expose `GET /br/manifest`: a machine-readable self-description covering identity, firmware, mode, every endpoint with parameters and response schemas, and captive-portal config fields. A developer or AI coding agent should integrate a certified device from its manifest alone, with zero additional documentation.
 - **No phoning home (Rule 7).** The philosophy is now a numbered rule: no outbound connections to non-owner endpoints. Carve-out: opt-in update checks or error reports to a manufacturer domain are allowed only if disabled by default, toggleable in the captive portal, listed in the manifest under `telemetry`, and free of sensor data.
 - **`schema_version` field** in the envelope payload.
+- **Reference firmware (v1.1.0)** now implements the spec: serves `GET /br/manifest` (in both connected and AP mode) and `GET /br/latest`, and emits `schema_version` in pushed envelopes. The reference soil sensor is certified in both push and serve modes.
 
 ### Planned
 
-- Reference firmware implementation of `/br/manifest` and serve mode in `/firmware/captive-portal`.
 - Wire format specification: signing, retries, batching.
 
 ## v0.1 (draft)

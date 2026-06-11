@@ -10,6 +10,10 @@
  *
  * Once credentials are saved, the device connects to the configured network
  * and posts sensor readings to the configured endpoint on a fixed interval.
+ * While connected it also serves the local API required for certification:
+ * GET /br/manifest (machine-readable self-description, protocol Rule 6) and
+ * GET /br/latest (most recent reading as an envelope payload). The device is
+ * therefore certified in both push and serve modes under protocol v0.2.0.
  *
  * Holding the BOOT button (GPIO0) for 5 seconds clears all stored
  * configuration and restarts into AP mode.
@@ -36,6 +40,14 @@
 
 #define DEVICE_ID  "BR-" BR_DEVICE_TAG
 #define AP_SSID    "BlueRaven-" BR_DEVICE_TAG
+
+// ─── Protocol identity ────────────────────────────────────────────────────────
+
+#define DEVICE_TYPE          "soil-sensor"
+#define FIRMWARE_VERSION     "1.1.0"
+#define FIRMWARE_SOURCE_URL  "https://github.com/hylenproductions/blueraven"
+#define PROTOCOL_VERSION     "0.2.0"
+#define ENVELOPE_SCHEMA      "0.2"
 
 // ─── Hardware ─────────────────────────────────────────────────────────────────
 
@@ -387,6 +399,9 @@ static void handleRescan() {
   g_server.send(302, "text/plain", "");
 }
 
+// Defined in the Local API section below; also registered on the AP portal.
+static void handleManifest();
+
 // ─── AP mode ─────────────────────────────────────────────────────────────────
 
 /*
@@ -415,6 +430,10 @@ static void startAPMode() {
   g_server.on("/",        HTTP_GET,  handleSetup);
   g_server.on("/save",    HTTP_POST, handleSave);
   g_server.on("/rescan",  HTTP_GET,  handleRescan);
+
+  // The manifest is available in AP mode too, so a device can be inspected
+  // before it has ever been configured.
+  g_server.on("/br/manifest", HTTP_GET, handleManifest);
 
   // Captive portal detection endpoints. Each OS probes a different URL;
   // we respond in a way that causes each to pop up the portal.
@@ -464,10 +483,11 @@ static bool connectWiFi() {
 /*
  * Build the Blue Raven standard payload and POST it to the configured endpoint.
  *
- * Payload format:
+ * Payload format (envelope, schema 0.2):
  *   {
- *     "device_id":  "BR-A7X3",
- *     "timestamp":  1234567890,
+ *     "device_id":      "BR-A7X3",
+ *     "schema_version": "0.2",
+ *     "timestamp":      1234567890,
  *     "readings": {
  *       "moisture":  42.5,
  *       "raw_value": 2100
@@ -494,6 +514,7 @@ static void postReading() {
   snprintf(payload, sizeof(payload),
     "{"
       "\"device_id\":\"" DEVICE_ID "\","
+      "\"schema_version\":\"" ENVELOPE_SCHEMA "\","
       "\"timestamp\":%lu,"
       "\"readings\":{"
         "\"moisture\":%.1f,"
@@ -521,6 +542,102 @@ static void postReading() {
     Serial.printf("[POST] failed: %s\n", HTTPClient::errorToString(status).c_str());
   }
   http.end();
+}
+
+// ─── Local API: /br/manifest and /br/latest ──────────────────────────────────
+//
+// Rule 6 of the protocol spec (v0.2.0): every certified device must expose
+// GET /br/manifest, a machine-readable self-description. A developer or an
+// AI coding agent should be able to fetch this document and integrate the
+// device with zero additional documentation.
+//
+// With /br/latest also exposed, this device is certified in BOTH modes:
+// it pushes envelopes to the owner-configured endpoint AND answers local
+// queries. Every value below is known at compile time, so the manifest is
+// a PROGMEM constant: zero heap, zero runtime formatting.
+
+static const char JSON_MANIFEST[] PROGMEM =
+  "{"
+    "\"device_id\":\"" DEVICE_ID "\","
+    "\"device_type\":\"" DEVICE_TYPE "\","
+    "\"firmware_version\":\"" FIRMWARE_VERSION "\","
+    "\"firmware_source_url\":\"" FIRMWARE_SOURCE_URL "\","
+    "\"protocol_version\":\"" PROTOCOL_VERSION "\","
+    "\"mode\":\"both\","
+    "\"capabilities\":["
+      "{"
+        "\"path\":\"/br/latest\","
+        "\"method\":\"GET\","
+        "\"parameters\":[],"
+        "\"response\":{"
+          "\"schema\":\"envelope\","
+          "\"readings\":{"
+            "\"moisture\":\"percent\","
+            "\"raw_value\":\"adc_counts\""
+          "}"
+        "}"
+      "},"
+      "{"
+        "\"path\":\"/br/manifest\","
+        "\"method\":\"GET\","
+        "\"parameters\":[],"
+        "\"response\":{\"schema\":\"manifest\"}"
+      "}"
+    "],"
+    "\"config\":["
+      "{\"name\":\"ssid\",\"type\":\"string\"},"
+      "{\"name\":\"password\",\"type\":\"string\"},"
+      "{\"name\":\"endpoint\",\"type\":\"string\"},"
+      "{\"name\":\"api_key\",\"type\":\"string\"}"
+    "],"
+    "\"push_target_configurable\":true,"
+    "\"envelope_schema_version\":\"" ENVELOPE_SCHEMA "\""
+  "}";
+
+static void handleManifest() {
+  g_server.send_P(200, "application/json", JSON_MANIFEST);
+}
+
+/*
+ * Serve the most recent reading as a standard envelope payload. The sensor
+ * is sampled on demand; for a sensor this cheap to read there is no reason
+ * to cache.
+ */
+static void handleLatest() {
+  SensorReading r = readMoisture();
+
+  char payload[256];
+  snprintf(payload, sizeof(payload),
+    "{"
+      "\"device_id\":\"" DEVICE_ID "\","
+      "\"schema_version\":\"" ENVELOPE_SCHEMA "\","
+      "\"timestamp\":%lu,"
+      "\"readings\":{"
+        "\"moisture\":%.1f,"
+        "\"raw_value\":%d"
+      "}"
+    "}",
+    millis() / 1000UL,
+    r.moisture_pct,
+    r.raw_value
+  );
+
+  g_server.send(200, "application/json", payload);
+}
+
+/*
+ * Start the local API in connected (STA) mode. The same WebServer instance
+ * used by the captive portal serves these routes on the device's LAN IP.
+ */
+static void startLocalApi() {
+  g_server.on("/br/manifest", HTTP_GET, handleManifest);
+  g_server.on("/br/latest",   HTTP_GET, handleLatest);
+  g_server.onNotFound([]() {
+    g_server.send(404, "application/json", F("{\"error\":\"not found\"}"));
+  });
+  g_server.begin();
+  Serial.printf("[API] /br/manifest and /br/latest at http://%s/\n",
+                WiFi.localIP().toString().c_str());
 }
 
 // ─── Factory reset ────────────────────────────────────────────────────────────
@@ -583,6 +700,7 @@ void setup() {
 
   g_mode = Mode::Connected;
   digitalWrite(PIN_STATUS_LED, HIGH); // solid = connected
+  startLocalApi();
   Serial.println("[BOOT] Ready. Posting every " + String(POST_INTERVAL_MS / 1000) + "s.");
 }
 
@@ -607,6 +725,9 @@ void loop() {
     delay(1000);
     ESP.restart();
   }
+
+  // Serve mode: answer local /br/manifest and /br/latest queries.
+  g_server.handleClient();
 
   unsigned long now = millis();
   if (now - g_last_post_ms >= POST_INTERVAL_MS) {

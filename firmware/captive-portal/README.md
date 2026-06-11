@@ -140,6 +140,7 @@ probe's actual range.
 ```json
 {
   "device_id": "BR-A7X3",
+  "schema_version": "0.2",
   "timestamp": 12345,
   "readings": {
     "moisture": 42.5,
@@ -163,6 +164,33 @@ Then replace `millis() / 1000UL` in `postReading()` with `(unsigned long)time(nu
 ```
 Authorization: Bearer <api_key>
 ```
+
+---
+
+## Local API: /br/manifest and /br/latest
+
+While connected to WiFi, the device serves a local HTTP API on its LAN IP
+(printed to serial on boot). This satisfies Rule 6 of the protocol spec
+(v0.2.0) and certifies the device in both push and serve modes.
+
+**`GET /br/manifest`** returns a machine-readable self-description: device
+identity, firmware version, mode, every endpoint with its response schema,
+and the captive-portal config fields. The intent: a developer (or an AI
+coding agent) fetches the manifest and integrates the device with zero
+additional documentation.
+
+**`GET /br/latest`** samples the sensor on demand and returns the reading
+as a standard envelope payload.
+
+Try it from any machine on the same network:
+
+```
+curl http://<device-ip>/br/manifest
+curl http://<device-ip>/br/latest
+```
+
+The manifest is also served in AP mode at `http://192.168.4.1/br/manifest`,
+so a device can be inspected before it has ever been configured.
 
 ---
 
