@@ -30,7 +30,7 @@ HTTP endpoint that accepts the Blue Raven payload format.
 
 - Any ESP32 devkit (ESP32-WROOM, ESP32-S3, etc.)
 - Soil moisture sensor (or any analog sensor) on GPIO34
-- GPIO34 is input-only and has no internal pull-up — suitable for ADC use
+- GPIO34 is input-only and has no internal pull-up, suitable for ADC use
 
 Pin map:
 
@@ -52,7 +52,7 @@ pio run --target upload
 pio device monitor
 ```
 
-PlatformIO handles the toolchain automatically. No library installs needed —
+PlatformIO handles the toolchain automatically. No library installs needed:
 all dependencies are bundled with the espressif32 platform package.
 
 ### Arduino IDE
@@ -85,12 +85,12 @@ All required libraries (`WiFi`, `DNSServer`, `WebServer`, `Preferences`,
 The device tag is set at compile time via `BR_DEVICE_TAG`. It appears in the
 AP network name and in every payload as the `device_id` field.
 
-**PlatformIO** — edit `platformio.ini`:
+**PlatformIO**: edit `platformio.ini`:
 ```ini
 build_flags = -DBR_DEVICE_TAG='"B2K9"'
 ```
 
-**Arduino IDE** — edit the define at the top of the `.ino`:
+**Arduino IDE**: edit the define at the top of the `.ino`:
 ```cpp
 #define BR_DEVICE_TAG "B2K9"
 ```
@@ -256,15 +256,15 @@ serializeJson(doc, payload);
 
 In AP mode:
 ```
-[BOOT] No config found — entering AP mode.
-[AP] Starting — SSID: BlueRaven-A7X3
+[BOOT] No config found. Entering AP mode.
+[AP] Starting. SSID: BlueRaven-A7X3
 [AP] Portal at http://192.168.4.1/
 [NVS] Config saved.
 ```
 
 Factory reset:
 ```
-[RESET] BOOT held — hold 5s to factory reset.
+[RESET] BOOT held. Hold 5s to factory reset.
 [RESET] Wiping config and restarting.
 [NVS] Config cleared.
 ```

@@ -313,7 +313,7 @@ static const char HTML_SAVED[] PROGMEM =
   "<head>"
     "<meta charset='UTF-8'>"
     "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-    "<title>Saved — Blue Raven</title>"
+    "<title>Saved · Blue Raven</title>"
     "<style>"
       "*{box-sizing:border-box;margin:0;padding:0}"
       "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"
@@ -345,7 +345,7 @@ static void handleSetup() {
 
   if (g_network_count == 0) {
     g_server.sendContent(
-      F("<option value='' disabled selected>No networks found — try rescanning</option>")
+      F("<option value='' disabled selected>No networks found. Try rescanning.</option>")
     );
   } else {
     for (int i = 0; i < g_network_count; i++) {
@@ -414,7 +414,7 @@ static void handleManifest();
  */
 static void startAPMode() {
   g_mode = Mode::AP;
-  Serial.println("[AP] Starting — SSID: " AP_SSID);
+  Serial.println("[AP] Starting. SSID: " AP_SSID);
 
   // AP_STA: AP interface for the portal, STA interface for scanning.
   WiFi.mode(WIFI_AP_STA);
@@ -654,7 +654,7 @@ static void checkFactoryReset() {
     if (!g_boot_btn_held) {
       g_boot_btn_held        = true;
       g_boot_btn_pressed_ms  = millis();
-      Serial.println("[RESET] BOOT held — hold 5s to factory reset.");
+      Serial.println("[RESET] BOOT held. Hold 5s to factory reset.");
     } else if (millis() - g_boot_btn_pressed_ms >= FACTORY_RESET_HOLD_MS) {
       Serial.println("[RESET] Wiping config and restarting.");
       clearConfig();
@@ -680,7 +680,7 @@ void setup() {
   bool configured = loadConfig();
 
   if (!configured) {
-    Serial.println("[BOOT] No config found — entering AP mode.");
+    Serial.println("[BOOT] No config found. Entering AP mode.");
     startAPMode();
     return;
   }
@@ -693,7 +693,7 @@ void setup() {
   }
 
   if (!connected) {
-    Serial.println("[BOOT] WiFi failed — entering AP mode for reconfiguration.");
+    Serial.println("[BOOT] WiFi failed. Entering AP mode for reconfiguration.");
     startAPMode();
     return;
   }
